@@ -21,7 +21,6 @@ class ArbolMerkel:
             hash_izq = hashlib.sha256(izquierda)
             diccionario[lista[index]] = hash_izq.hexdigest()
 
-            print index
 
              # elemento a la derecha del que esta el mas a la izquierda
             if index+1 != len(lista):
