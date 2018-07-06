@@ -1,0 +1,22 @@
+<!-- extend base layout -->
+{% extends "base.html" %}
+
+{% block content %}
+	<br>
+
+	<center>
+	<form action="/submit" id="textform" method="post">
+	    <input type="text" name="author" placeholder="Nombre">
+		<br><br>
+		<input type="text" name="key" placeholder="Clave Publica">
+		<br><br>
+	    <input type="submit" value="Agregar">
+
+
+	</form>
+	</center>
+
+	<br>
+	<a href="/envios" target="_blank"><button>Añadir archivo</button></a>
+
+{% endblock %}
