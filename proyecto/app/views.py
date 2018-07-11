@@ -5,8 +5,8 @@ import requests
 from flask import render_template, redirect, request
 from flaskext.mysql import MySQL
 
-from Crypto.Cipher import PKCS1_v1_5
-from Crypto.Hash import SHA
+from Crypto.Cipher import PKCS1_v1_5, AES
+from Crypto.Random import get_random_bytes
 from Crypto.PublicKey import  RSA
 from datetime import time
 
@@ -17,8 +17,7 @@ from arbol_merkel import  *
 # such nodes as well.
 CONNECTED_NODE_ADDRESS = "http://127.0.0.1:8000"
 
-posts = []
-LISTA =[]
+
 
 mysql = MySQL()
 
@@ -33,6 +32,9 @@ cursor = conn.cursor()
 indice = 0
 start_time = time(0,0,0)
 end_time = time (0,30,0)
+posts = []
+LISTA = []
+aux = []
 
 while start_time:
     manda_bloque()
@@ -40,9 +42,10 @@ while start_time:
         break
 
 def manda_bloque():
+
     indice = (indice +1)
     mi_arbol = ArbolMerkel()
-    aux =+ LISTA
+    aux.append(LISTA)
     LISTA = []
     mi_arbol.lista = aux
     mi_arbol.crear_arbol()
@@ -194,12 +197,32 @@ def encriptar(clave,archivo):
     if clave == None:
         print("El usuario no tiene clave publica asignada")
     else:
-        h = SHA.new(archivo)
-        key = RSA.importKey(clave)
-        cipher = PKCS1_v1_5.new(key)
-        ciphertext = cipher.encrypt(archivo + h.digest())
 
-        return ciphertext
+        # Cargamos la clave publica
+        key = RSA.importKey(clave)
+        # Instancia del cifrador asimetrico
+        cipher_rsa = PKCS1_v1_5.new(key)
+        # Generamos una clave para el cifrado simetrico
+        aes_key = get_random_bytes(16)
+        # Encriptamos la clave simetrico con la clave publica RSA
+        enc_aes_key = cipher_rsa.encrypt(aes_key)
+
+        # Abro el fichero lo copio en memoria y lo cierro
+        f = open(archivo, 'rb+')
+        d = f.read()
+        f.close()
+
+        # Encriptamos los datos con la clve simetrica
+        cipher_aes = AES.new(aes_key, AES.MODE_EAX)
+        d = cipher_aes.encrypt(d, ' ')
+        f = open(archivo, 'wb+')
+        f.write(d)
+        # Aniadimos la clave simetrica codificada en la ultima linea del archivo
+        f.write("\n")
+        f.write(enc_aes_key)
+        f.close()
+
+        return f
 
 def timestamp_to_string(epoch_time):
     return datetime.datetime.fromtimestamp(epoch_time).strftime('%H:%M')
