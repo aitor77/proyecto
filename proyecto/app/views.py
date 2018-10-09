@@ -150,11 +150,12 @@ def envios():
 def submit_archivo():
     name = request.form["author"]
     file = request.form["archivo"]
+    files = request.form["archivo"]
     save = request.form.get('guardar')
     encrip = request.form.get('encriptar')
     if name and file:
         selectCmd = "select publicKey from usuarios where (nombre='"+name+"');"
-        insertCmd = "insert into datos (nombre, archivo) values ('"+name+"','"+file+"');"
+        insertCmd = "insert into datos (nombre, archivo, nombre_fich) values ('"+name+"','"+file+"','"+files+"');"
         if save and encrip:
             cursor.execute(selectCmd)
             key = cursor.fetchone()
@@ -164,7 +165,7 @@ def submit_archivo():
             except Exception as e:
                 print("Hubo un problema al insertar los datos:" + str(e))
                 return json.dumps({'error': 'Hubo un error al intentar ingresar los datos'})
-            b = encriptar(key,file)
+            b = encriptar(key,files)
             LISTA.append(b)
 
             return json.dumps({'message': 'guardar y encriptar'})
@@ -182,12 +183,12 @@ def submit_archivo():
         elif encrip:
             cursor.execute(selectCmd)
             key = cursor.fetchone()
-            b = encriptar(key,file)
+            b = encriptar(key,files)
             LISTA.append(b)
             return json.dumps({'message': 'encriptar'})
 
         else:
-            LISTA.append(file)
+            LISTA.append(files)
             return json.dumps({'message': 'ni guardar ni encriptar'})
     else:
         return json.dumps({'error': 'Tienen que rellenarse todos los campos'})
@@ -223,6 +224,38 @@ def encriptar(clave,archivo):
         f.close()
 
         return f
+
+def desencriptar(clave, fichero):
+    if clave == None:
+        print("No se a asignado la clave privada")
+    else:
+        # Instancia del cifrador asimetrico
+        cipher_rsa = PKCS1_v1_5(clave)
+
+        # Abrimos el fichero
+        f = open(fichero,'rb+')
+        d = f.read()
+        # Lo fraccionamos en lineas
+        lines = f.readlines()
+        f.close()
+        # cogemos la ultima para descifrar la clave aes
+        ultima = lines[len(lines)-1]
+
+        # desencritamos clave AES
+        enc_aes = cipher_rsa.decrypt(ultima)
+
+        # Desencriptamos los datos con la clave AES
+        key = AES.new(enc_aes, AES.MODE_EAX)
+        data = key.decrypt(d,' ')
+        cadena = data.decode("utf-8")
+        f = open(fichero, 'wb+')
+        f.write(cadena)
+        f.close()
+
+        return f
+
+
+
 
 def timestamp_to_string(epoch_time):
     return datetime.datetime.fromtimestamp(epoch_time).strftime('%H:%M')
