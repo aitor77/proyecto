@@ -86,7 +86,15 @@ def manda_bloque():
         except Exception as e:
             print("Hubo un problema al insertar los datos:" + str(e))
 
+        tam = len(mi_arbol.get_diccionario())
+        for index in range(0, tam):
+            insertHoja = "insert into hojas (idRegistro, hojascol, numHoja) values ('" + indice + "','" +  mi_arbol.get_diccionario().keys()[index] + "','"+index+"';"
 
+            try:
+                cursor.execute(insertHoja)
+                conn.commit()
+            except Exception as e:
+                print ("hubo un error al insertar los datos de la hoja "+ index)
 
 
 
@@ -118,6 +126,16 @@ def index():
                            node_address=CONNECTED_NODE_ADDRESS,
                            readable_time=timestamp_to_string)
 
+
+def comprobar_archivo(self,archivo,idRegistroArbol):
+    hoja = hashlib.sha256(archivo)
+    selectCmd = "select hojascol from hojas Where hojascol ="+hoja+" and idRegistro = "+ idRegistroArbol+"');"
+    cursor.execute(selectCmd)
+    key = cursor.fetchone()
+    if key is None :
+        return True
+    else:
+        return False
 
 @app.route('/submit', methods=['POST'])
 def submit_text():
